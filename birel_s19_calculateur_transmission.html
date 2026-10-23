@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101820">
+<meta name="description" content="Calculateur de démultiplication pour karting KZ">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Birel S19 KZ — Transmission</title>
+<style>
+:root{color-scheme:dark;--bg:#101820;--panel:#1b2732;--line:#344451;--text:#f4f7fa;--muted:#aebdca;--accent:#f4b942}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom)}
+main{max-width:600px;margin:0 auto;padding:18px 0 28px}
+header{padding:8px 0 16px}
+.kicker{color:var(--accent);font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+h1{font-size:1.7rem;line-height:1.15;margin:6px 0}
+.sub{color:var(--muted);margin:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}
+h2{font-size:1.05rem;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:.83rem;color:var(--muted);margin:10px 0 6px}
+input{width:100%;background:#0d141a;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:13px;font-size:1.05rem}
+.big{font-size:1.6rem;font-weight:800}
+.muted{color:var(--muted);font-size:.9rem}
+.result{background:#0d141a;border-radius:12px;padding:13px;margin-top:10px}
+.resultrow{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:8px 0}
+.pill{display:inline-block;border-radius:999px;padding:5px 10px;font-weight:800;font-size:.8rem;background:#253746}
+.positive{color:#ffcf70}.negative{color:#8de0b1}
+button{width:100%;border:1px solid var(--line);border-radius:12px;background:#253746;color:var(--text);padding:13px;font-weight:700;font-size:1rem;margin-top:12px}
+.note{font-size:.85rem;color:var(--muted);line-height:1.45}
+footer{color:var(--muted);font-size:.78rem;text-align:center;padding:12px}
+@media(min-width:520px){.big{font-size:1.8rem}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="kicker">Karting · KZ</div>
+  <h1>Comparateur de transmission</h1>
+  <p class="sub">Birel Art S19 — pignon / couronne</p>
+</header>
+<section class="panel">
+  <h2>Compare deux transmissions</h2>
+  <div class="grid">
+    <div>
+      <strong>Transmission A</strong>
+      <label for="p1">Pignon (dents)</label><input id="p1" type="number" inputmode="numeric" min="1" value="17">
+      <label for="c1">Couronne (dents)</label><input id="c1" type="number" inputmode="numeric" min="1" value="25">
+    </div>
+    <div>
+      <strong>Transmission B</strong>
+      <label for="p2">Pignon (dents)</label><input id="p2" type="number" inputmode="numeric" min="1" value="20">
+      <label for="c2">Couronne (dents)</label><input id="c2" type="number" inputmode="numeric" min="1" value="28">
+    </div>
+  </div>
+  <label for="rpm">Régime moteur de référence (tr/min)</label>
+  <input id="rpm" type="number" inputmode="numeric" min="0" step="100" value="15000">
+  <button id="reset" type="button">Réinitialiser l’exemple 17 × 25 / 20 × 28</button>
+</section>
+<section class="panel">
+  <h2>Résultats</h2>
+  <div class="resultrow"><span class="muted">Rapport A (couronne ÷ pignon)</span><strong id="d1">1,4706</strong></div>
+  <div class="resultrow"><span class="muted">Rapport B</span><strong id="d2">1,4000</strong></div>
+  <div class="result">
+    <div class="muted">Variation du régime à vitesse identique (B par rapport à A)</div>
+    <div class="big negative" id="delta">−4,80 %</div>
+    <div id="direction" class="pill">Transmission B plus longue</div>
+  </div>
+  <div class="result">
+    <div class="muted">Régime estimé avec la transmission B</div>
+    <div class="big" id="rpm2">14 280 tr/min</div>
+    <div class="muted" id="rpmdiff">−720 tr/min par rapport à A</div>
+  </div>
+</section>
+<section class="panel">
+  <h2>Formules</h2>
+  <p><strong>Rapport</strong> = nombre de dents de la couronne ÷ nombre de dents du pignon.</p>
+  <p><strong>Variation (%)</strong> = (rapport B ÷ rapport A − 1) × 100.</p>
+  <p><strong>Régime B estimé</strong> = régime A × rapport B ÷ rapport A.</p>
+  <p class="note">Comparaison théorique à vitesse identique, avec le même diamètre de pneus et sans glissement. Cela ne prédit pas directement le temps au tour : le moteur doit pouvoir tirer le rapport choisi.</p>
+</section>
+<footer>Calculateur autonome · fonctionne hors ligne une fois chargé</footer>
+</main>
+<script>
+const ids=['p1','c1','p2','c2','rpm'];
+const el=id=>document.getElementById(id);
+const fmt=(n,d=2)=>n.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+function calculate(){
+ const vals=ids.map(id=>Number(el(id).value));
+ const [p1,c1,p2,c2,rpm]=vals;
+ if([p1,c1,p2,c2].some(v=>!Number.isFinite(v)||v<=0)){
+  el('d1').textContent=el('d2').textContent='—';el('delta').textContent='Vérifie les dents';el('rpm2').textContent='—';el('rpmdiff').textContent='';return;
+ }
+ const a=c1/p1,b=c2/p2,delta=(b/a-1)*100,r2=rpm*b/a,diff=r2-rpm;
+ el('d1').textContent=fmt(a,4);el('d2').textContent=fmt(b,4);
+ el('delta').textContent=(delta>0?'+':delta<0?'−':'')+fmt(Math.abs(delta),2)+' %';
+ el('delta').className='big '+(delta<0?'negative':delta>0?'positive':'');
+ el('direction').textContent=Math.abs(delta)<0.005?'Rapports identiques':delta<0?'Transmission B plus longue':'Transmission B plus courte';
+ el('rpm2').textContent=Math.round(r2).toLocaleString('fr-FR')+' tr/min';
+ el('rpmdiff').textContent=(diff>0?'+':diff<0?'−':'')+Math.round(Math.abs(diff)).toLocaleString('fr-FR')+' tr/min par rapport à A';
+}
+ids.forEach(id=>el(id).addEventListener('input',calculate));
+el('reset').addEventListener('click',()=>{[17,25,20,28,15000].forEach((v,i)=>el(ids[i]).value=v);calculate()});
+calculate();
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
